@@ -50,7 +50,7 @@ class SetTrainTest(tk.Frame):
                 output_layer_size,
                 random_seed)
 
-        all_pattern = g.allTrainingPattern
+        all_pattern = g.all_training_patterns
         self.all_errors = []
         start_time = time.perf_counter()
         for e in range(epochs):
@@ -66,15 +66,17 @@ class SetTrainTest(tk.Frame):
         g.gui.update_status('')
 
     def run_test(self):
-        if len(g.allTestPattern) == 0:
-            tk.messagebox.showinfo('Cannot run test:', 'No test data loaded')
-            return
+        if len(g.all_test_patterns) > 0:
+            all_pattern = g.all_test_patterns
+        else:
+            tk.messagebox.showinfo('No test patterns loaded', 'Using training patterns')
+            all_pattern = g.all_training_patterns
 
         g.gui.update_status('Test in progress, please wait!')
-        all_pattern = g.allTestPattern
+
         pattern_index = 1
         failing_pattern_indexes = []
-        n_labels = len(g.outputLayerLabels)
+        n_labels = len(g.training_pattern_labels)
         self.confusion = [[0 for c in range(n_labels)]
                           for r in range(n_labels)]
         for pattern in all_pattern:
@@ -119,20 +121,31 @@ class SetTrainTest(tk.Frame):
             return
 
         g.neuroNet = None
-        g.allTestPattern = []
+        
+        # Clear test patterns
+        g.all_test_patterns = []
+        g.numberTestRecords.set('')
+        self.failing_tests.set('')
+        self.performance.set('')
+        self.failure_rate.set('')
+        
         g.training_file_name.set("Training data: " + files[0])
         g.gui.update_status('Loading training data, please wait!')
         success, number_records = \
-                 FileAccess.load_data_file(files[0], g.allTrainingPattern)
+                 FileAccess.load_data_file(files[0], g.all_training_patterns,
+                                           g.training_pattern_labels)
+        
+        output_layer_size = len(g.training_pattern_labels)
+        g.outputLayerSize.set(output_layer_size)
         g.gui.update_status('')
         g.numberTrainingRecords.set(str(number_records))
-        
+                
     def load_test_data(self):
         files = tk.filedialog.askopenfilenames()
         if len(files) == 0:  # User cancelled
             return
 
-        if len(g.allTrainingPattern) == 0:
+        if len(g.all_training_patterns) == 0:
             tk.messagebox.showinfo('Setup error:', 'Please load training pattern first')
             return
 
@@ -140,13 +153,10 @@ class SetTrainTest(tk.Frame):
         g.gui.update_status('Loading test data, please wait!')
 
         success, number_records = \
-                 FileAccess.load_data_file(files[0], g.allTestPattern)
+                 FileAccess.load_data_file(files[0], g.all_test_patterns,
+                                           g.test_pattern_labels)
         g.gui.update_status('')
         g.numberTestRecords.set(str(number_records))
-
-        if success:
-            g.gui.tabInspection.create_inspection_display()
-        return
 
     def save_network(self):
         if g.neuroNet:
@@ -159,7 +169,7 @@ class SetTrainTest(tk.Frame):
 
     def show_confusion(self):
         if self.confusion:
-            ConfusionMatrix(g.gui, g.outputLayerLabels, self.confusion)
+            ConfusionMatrix(g.gui, g.training_pattern_labels, self.confusion)
     
     # GUI
     column_1 = 20

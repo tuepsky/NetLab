@@ -14,7 +14,7 @@ from Inspection import Inspection
 class Gui(tk.Tk):
     def __init__(self):
         super(Gui, self).__init__()
-        self.title('NetLab 0.3 -  martin-reiche.de 2024')
+        self.title('NetLab 0.4 -  martin-reiche.de 2024')
         self.minsize(770, 800)
 
         # Tabulator
@@ -54,6 +54,7 @@ class Gui(tk.Tk):
 
     def tab_changed(self,event):
         if event.widget.index('current') == 1: # inspection tab
+            self.tabInspection.create_inspection_display()
             self.tabInspection.apply_pattern(0)
 
 

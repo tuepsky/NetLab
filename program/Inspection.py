@@ -10,10 +10,9 @@ class Inspection(tk.Frame):
         self.button_clear.configure(state=tk.NORMAL)
         self.spin_box_record.configure(state=tk.DISABLED)
         index = int(self.spin_box_record.get()) - 1
-        pattern = g.allTestPattern
-        if len(pattern) == 0:
+        if len(self.patterns) == 0:
             return
-        label, data = pattern[index]
+        label, data = self.patterns[index]
         number_rows = int(g.numRows.get())
         number_cols = int(g.numCols.get())
         self.input_layer_excitation = deepcopy(data).reshape(number_rows, number_cols)
@@ -42,13 +41,12 @@ class Inspection(tk.Frame):
 
         number_rows = int(g.numRows.get())
         number_cols = int(g.numCols.get())
-        pattern = g.allTestPattern
-        if len(pattern) == 0:
+        if len(self.patterns) == 0:
             return
-        self.spin_box_record.configure(from_=1, to=len(pattern))
+        self.spin_box_record.configure(from_=1, to=len(self.patterns))
         self.current_record.set(index+1)
-        pat, data = pattern[index]
-        self.pattern.set(g.outputLayerLabels[int(pat)])
+        pat, data = self.patterns[index]
+        self.pattern_label.set(self.pattern_labels[int(pat)])
         data = data.reshape(number_rows, number_cols)
         for row in range(number_rows):
             for col in range(number_cols):
@@ -62,7 +60,15 @@ class Inspection(tk.Frame):
         self.apply_pattern(int(index) - 1)
 
     def create_inspection_display(self):
-        if len(g.allTestPattern) == 0:
+        
+        if len(g.all_test_patterns) > 0:
+            self.patterns = g.all_test_patterns
+            self.pattern_labels = g.test_pattern_labels
+        else:
+            self.patterns = g.all_training_patterns
+            self.pattern_labels = g.training_pattern_labels
+            
+        if len(self.patterns) == 0:
             return
         self.create_input_display()
         self.create_hidden_histogram()
@@ -107,7 +113,7 @@ class Inspection(tk.Frame):
         for label in self.output_labels:
             label.destroy()
         self.output_labels = []
-        output_layer_labels = g.outputLayerLabels
+        output_layer_labels = self.pattern_labels
         canvas_height = int(self.canvas_output.cget("height"))
         bar_height = min(canvas_height // len(output_layer_labels), 25)
         for i in range(len(output_layer_labels)):
@@ -155,14 +161,14 @@ class Inspection(tk.Frame):
     def apply_pattern(self, index):
         if index < 0:
             index = int(self.spin_box_record.get()) - 1
-        pattern = g.allTestPattern
+
         # Check index validity
-        if len(pattern) - index < 1:
+        if len(self.patterns) - index < 1:
             return
         # Show the input pattern
         self.show_input_pattern(index)
         # Run the network
-        self.output_index, data = pattern[index]
+        self.output_index, data = self.patterns[index]
         self.run_network(data)
 
     def run_network(self, data):
@@ -183,13 +189,13 @@ class Inspection(tk.Frame):
                 max_excitation = output_excitation[i]
                 i_max = i
 
-        self.detected.set(g.outputLayerLabels[i_max])
+        self.detected.set(self.pattern_labels[i_max])
         if int(self.output_index) == i_max:
             self.lbl_value_detected.configure(background=g.bgLight)
         else:
             self.lbl_value_detected.configure(background="Yellow")
 
-        self.expected.set(g.outputLayerLabels[int(self.output_index)])
+        self.expected.set(self.pattern_labels[int(self.output_index)])
 
     def spin_box_record_changed(self, _):
         val = self.spin_box_record.get()
@@ -260,6 +266,7 @@ class Inspection(tk.Frame):
     
     def __init__(self, notebook):
         super(Inspection, self).__init__(notebook, background=g.bgDark)
+        self.patterns = []
         self.output_labels = []
         self.rows = [self.row_1 + n * self.lineSpace for n in range(30)]
 
@@ -267,10 +274,10 @@ class Inspection(tk.Frame):
         lbl_header_left = tk.Label(self, text='Input Layer', font=g.fontTitle, background=g.bgDark)
         lbl_header_left.place(x=self.column_1, y=self.header_line)
 
-        self.pattern = tk.StringVar()
+        self.pattern_label = tk.StringVar()
         lbl_pattern = tk.Label(self, text='Pattern', font=g.fontLabel, background=g.bgDark)
         lbl_pattern.place(x=self.column_1, y=self.rows[5] + 15)
-        lbl_value_pattern = tk.Label(self, textvariable=self.pattern,
+        lbl_value_pattern = tk.Label(self, textvariable=self.pattern_label,
                                      font=g.fontLabel, width=6, background=g.bgLight)
         lbl_value_pattern.place(x=self.column_2, y=self.rows[5] + 15)
 

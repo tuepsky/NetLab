@@ -3,7 +3,7 @@ import numpy as np
 from tkinter import messagebox
 import Global as g
 
-def load_data_file(file_path, target):
+def load_data_file(file_path, target_patterns, target_labels):
     file = open(file_path)
     try:
         header = file.readline(200)
@@ -44,15 +44,15 @@ def load_data_file(file_path, target):
             tk.messagebox.showinfo('Incompatible file content, second line is:', second_line)
             return False, 0
 
-        output_layer_size = len(entries) - 1
-        g.outputLayerSize.set(output_layer_size)
-        g.outputLayerLabels = entries[1:]
+        target_labels.clear()
+        target_labels += entries[1:]
 
     except:
         tk.messagebox.showinfo('Unexpected second line', second_line)
         return False, 0
 
-    number_records = read_format_string(file, attributes["type"], num_rows, num_cols, target)
+    number_records = read_format_string(file, attributes["type"],
+                            num_rows, num_cols,  target_patterns, target_labels)
 
     if number_records is None:
         return False, 0
@@ -60,7 +60,7 @@ def load_data_file(file_path, target):
         return True, number_records
 
 
-def read_format_string(file, type, rows, columns, target):
+def read_format_string(file, type, rows, columns, target_patterns, target_labels):
     if type == "data_bw":
         t = 0
     elif type == "data_gray":
@@ -69,7 +69,7 @@ def read_format_string(file, type, rows, columns, target):
         tk.messagebox.showerror('Unexpected data type', type)
         return
 
-    target.clear()  # Clear old pattern data
+    target_patterns.clear()  # Clear old pattern data
     block_len = rows + 1
     line_no = 0
     number_records = 0
@@ -79,7 +79,7 @@ def read_format_string(file, type, rows, columns, target):
         if offset == 0:
             label = line.rstrip()
             try:
-                label_index = g.outputLayerLabels.index(label)
+                label_index = target_labels.index(label)
             except ValueError:
                 msg = 'Unexpected label in line ' + str(line_no + 3) + ": '" + label + "'"
                 tk.messagebox.showerror('Error in training data', msg)
@@ -105,7 +105,7 @@ def read_format_string(file, type, rows, columns, target):
         pattern_line.append(arr)
         if offset == rows:
             pattern = np.asarray(pattern_line).ravel()
-            target.append((label_index, pattern))
+            target_patterns.append((label_index, pattern))
             pattern_line = []
         line_no += 1
     return number_records

@@ -22,9 +22,10 @@ numberTrainingRecords = None
 neuronNet = None
 gui = None
 
-allTrainingPattern = []
-outputLayerLabels = None # Labels of output layer neurons
-allTestPattern = []
+all_training_patterns = []
+training_pattern_labels = []
+all_test_patterns = []
+test_pattern_labels = []
 
 test_file_name = None
 training_file_name = None
